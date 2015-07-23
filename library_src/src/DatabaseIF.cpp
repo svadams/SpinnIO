@@ -33,7 +33,7 @@ DatabaseIF::~DatabaseIF() {
 DatabaseIF::DatabaseIF(int listenPort, char* dbPath) {
         finished = false;
         cout << "Creating database handshaker with port " << listenPort << endl;
-	this->sock = new SocketIF(listenPort);
+        this->sock = new SocketIF(listenPort);
         this->sockfd_input = sock->getSocket();
         cout << "Attempting to handshake with toolchain" << endl;
         receiveNotification();

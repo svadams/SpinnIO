@@ -6,6 +6,7 @@
 
 #include "EIEIOSender.h"
 #include <stdio.h>
+#include <iostream>
 #include <cstdlib>
 #include <string.h>
 #include <unistd.h>
@@ -19,10 +20,10 @@ namespace spinnio
 EIEIOSender::EIEIOSender(int sendPort, char* ip, bool dbConn, char* dbPath) {
 
 
-	printf("Creating EIEIO sender to spiNNaker with port %d and IP %s\n", sendPort, ip);
+	cout << "Creating EIEIO sender to spiNNaker with port " << sendPort << "and IP " << ip << endl;
 
 	if (pthread_mutex_init(&this->send_mutex, NULL) == -1) {
-	        fprintf(stderr, "Error initializing send mutex!\n");
+	        cerr << "Error initializing send mutex!" << endl;
 	        exit(-1);
 	}
 	pthread_cond_init(&this->cond, 0);
@@ -39,7 +40,7 @@ EIEIOSender::EIEIOSender(int sendPort, char* ip, bool dbConn, char* dbPath) {
                // get key-id and id-key mappings
                this->keyIDMap = dbConnection->getKeyIDMap();
                this->idKeyMap = dbConnection->getIDKeyMap();
-               printf("OK to send...Cleaning up dbConnection\n");
+               cout << "OK to send...Cleaning up dbConnection" << endl;
                dbConnection = NULL;
             }
 
@@ -57,7 +58,7 @@ EIEIOSender::EIEIOSender(int sendPort, char* ip, bool dbConn, char* dbPath) {
        this->addr_info = 0;
 
        if (getaddrinfo(ip, NULL, &(this->hints), &(this->addr_info)) != 0) {
-           fprintf(stderr, "Could not resolve hostname, exiting\n");
+           cerr << "Could not resolve hostname, exiting" << endl;
            exit(-1);
        }
        ((struct sockaddr_in *) this->addr_info->ai_addr)->sin_port = htons(sendPort);

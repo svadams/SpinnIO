@@ -6,6 +6,7 @@
 
 
 #include <stdio.h>
+#include <iostream>
 #include <string.h>
 #include <map>
 #include <sqlite3.h>
@@ -31,15 +32,15 @@ DatabaseIF::~DatabaseIF() {
 
 DatabaseIF::DatabaseIF(int listenPort, char* dbPath) {
         finished = false;
-        printf("Creating database handshaker with port %d\n", listenPort);
+        cout << "Creating database handshaker with port " << listenPort << endl;
 	this->sock = new SocketIF(listenPort);
         this->sockfd_input = sock->getSocket();
-        printf("Attempting to handshake with toolchain\n");
+        cout << "Attempting to handshake with toolchain" << endl;
         receiveNotification();
         // Open database and read Key-ID map
-        printf("Attempting to open database %s\n", dbPath);
+        cout << "Attempting to open database " << dbPath << endl;
         openDatabase(dbPath);
-        printf("Reading key-id maps\n");
+        cout << "Reading key-id maps" << endl;
         // Here we make an assumption that there is only one
         // receving and one sending population and that they are
         // tagged 'spikes_in' and 'spikes_out' respectively
@@ -49,13 +50,13 @@ DatabaseIF::DatabaseIF(int listenPort, char* dbPath) {
         this->idKeyMap = new std::map<int, int>();
         readDatabase((char*) sender_pop.c_str(), true, (std::map<int, int>*)this->keyIDMap);
         readDatabase((char*) receiver_pop.c_str(), false, (std::map<int, int>*)this->idKeyMap);
-        printf("Attempting to close database\n");
+        cout << "Attempting to close database" << endl;
         closeDbConnection();
         // send message to toolchain to confirm read
-        printf("Sending acknowledgement to toolchain\n");
+        cout << "Sending acknowledgement to toolchain" << endl;
         sendReadyNotification();
         // close the connection as we've finished with the database
-        printf("Closing connection\n");
+        cout << "Closing database connection" << endl;
         sock->closeSocket();
         finished = true;
 }
@@ -65,10 +66,11 @@ void DatabaseIF::openDatabase(char* dbPath){
     int rc;
     rc = sqlite3_open(dbPath, &this->db);
     if(rc){
-       fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(this->db));
+       //fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(this->db));
+       cerr << "Can't open database: " << sqlite3_errmsg(this->db) << endl;
     }
     else{
-      fprintf(stderr, "Opened database successfully\n");
+      cerr << "Opened database successfully" << endl;
     }
     
 }
@@ -95,9 +97,7 @@ void DatabaseIF::readDatabase(char* pop, bool keyToID, std::map<int, int>* keyMa
         }
         sqlite3_free(sql);
     } else {
-        fprintf(stderr, "Error reading database: %i: %s\n",
-                sqlite3_errcode(this->db),
-                sqlite3_errmsg(this->db));
+        cerr << "Error reading database: " << sqlite3_errcode(this->db) << " " << sqlite3_errmsg(this->db) << endl;
         exit(-1);
     }
 }
@@ -132,19 +132,18 @@ void DatabaseIF::receiveNotification(){
 		    this->sockfd_input, (char *) buffer_input, sizeof(buffer_input), 0,
 		    (sockaddr*) &this->response_address, (socklen_t*) &addr_len_input);
 		if (numbytes_input == -1) {
-			fprintf(stderr, "Packet not received, exiting\n");
+                        cerr << "Packet not received, exiting" << endl;
 
 			// will only get here if there's an error getting the input frame
 			// off the Ethernet
 			exit(-1);
 		}
 		if (numbytes_input < 2) {
-			fprintf(stderr, "Error - packet too short\n");
+                        cerr << "Error - packet too short" << endl;
 			continue;
 		}
 		received = true;
 	}
-        printf("Are we done?\n");
 }
 
 void DatabaseIF::sendReadyNotification(){

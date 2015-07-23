@@ -6,6 +6,7 @@
 
 #include "EIEIOReceiver.h"
 #include <stdio.h>
+#include <iostream>
 #include <cstdlib>
 #include <string.h>
 #include <unistd.h>
@@ -19,10 +20,10 @@ namespace spinnio
 EIEIOReceiver::EIEIOReceiver(int spinnPort, char* ip, bool dbConn, char* dbPath) {
 
 
-	printf("Creating EIEIO receiver from spiNNaker with port %d and IP %s\n", spinnPort, ip);
+	cout << "Creating EIEIO receiver from spiNNaker with port " << spinnPort << " and IP " << ip << endl;
 
 	if (pthread_mutex_init(&this->recvr_mutex, NULL) == -1) {
-	        fprintf(stderr, "Error initializing recvr mutex!\n");
+	        cerr << "Error initializing recvr mutex!" << endl;
 	        exit(-1);
 	}
 	pthread_cond_init(&this->cond, 0);
@@ -38,7 +39,7 @@ EIEIOReceiver::EIEIOReceiver(int spinnPort, char* ip, bool dbConn, char* dbPath)
                // get key-id and id-key mappings
                this->keyIDMap = dbConnection->getKeyIDMap();
                this->idKeyMap = dbConnection->getIDKeyMap();
-               printf("Cleaning up dbConnection\n");
+               cout << "Cleaning up dbConnection" << endl;
                dbConnection = NULL;
             }
 
@@ -57,10 +58,10 @@ EIEIOReceiver::EIEIOReceiver(int spinnPort, char* ip, bool dbConn, char* dbPath)
 
 EIEIOReceiver::EIEIOReceiver(int spinnPort, char* ip, std::map<int, int>* keymap) {
 
-	printf("Creating EIEIO receiver from spiNNaker with port %d and IP %s\n", spinnPort, ip);
+	cout << "Creating EIEIO receiver from spiNNaker with port " << spinnPort << " and IP " << ip << endl;
 
 	if (pthread_mutex_init(&this->recvr_mutex, NULL) == -1) {
-	        fprintf(stderr, "Error initializing recvr mutex!\n");
+	        cerr << "Error initializing recvr mutex!" << endl;
 	        exit(-1);
 	}
 	pthread_cond_init(&this->cond, 0);
@@ -101,10 +102,10 @@ void EIEIOReceiver::InternalThreadEntry(){
                                  sizeof(buffer_input), 0, (sockaddr*) &this->si_other,
                                  (socklen_t*) &this->addr_len_input);
             if (numbytes_input == -1) {
-               fprintf(stderr, "Packet not received, exiting\n");
+               cerr << "Packet not received, exiting" << endl;
                exit(-1);
             } else if (numbytes_input < 9) {
-               fprintf(stderr, "Error - packet too short\n");
+               cerr << "Error - packet too short" << endl;
                continue;
             } else {
                 // packet is OK
@@ -143,12 +144,12 @@ void EIEIOReceiver::convertEIEIOMessage(eieio_message* message){
 	//check that its a data message
 	if (message->header.f != 0 or message->header.p != 0 or message->header.d != 1 
                                    or message->header.t != 1 or message->header.type != 2){
-           printf("this packet was determined to be a "
-                  "command packet. therefore not processing it.");
-           printf("eieio message: p=%i f=%i d=%i t=%i type=%i tag=%i count=%i\n",
-                  message->header.p, message->header.f, message->header.d,
-                  message->header.t, message->header.type, message->header.tag,
-                  message->header.count);
+           cout << "this packet was determined to be a "
+                  "command packet. therefore not processing it." << endl;
+           //printf("eieio message: p=%i f=%i d=%i t=%i type=%i tag=%i count=%i\n",
+           //       message->header.p, message->header.f, message->header.d,
+           //       message->header.t, message->header.type, message->header.tag,
+           //       message->header.count);
         } else {
            uint time = (message->data[3] << 24) |
                        (message->data[2] << 16) |
@@ -163,7 +164,7 @@ void EIEIOReceiver::convertEIEIOMessage(eieio_message* message){
                         (message->data[data_position]);
               int neuron_id = (*(this->keyIDMap))[key];
               if (this->keyIDMap->find(key) == this->keyIDMap->end()) {
-                 fprintf(stderr, "Missing neuron id for key %d\n", key);
+                 cerr << "Missing neuron id for key " << key << endl;
                  continue;
               }
               //fprintf(stderr, "time = %i, key = %i, neuron_id = %i\n", time, key, neuron_id);

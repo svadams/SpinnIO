@@ -6,6 +6,7 @@
 
 
 #include <stdio.h>
+#include <iostream>
 #include <string.h>
 #include <cstdlib>
 #include <unistd.h>
@@ -25,7 +26,7 @@ SocketIF::~SocketIF() {
 
 SocketIF::SocketIF(int socketPort) {
 	this->addr_len_input = sizeof(this->si_other);
-        printf("Creating socket with port %d\n", socketPort);
+        cout << "Creating socket with port " << socketPort << endl;
 	openSocket(socketPort);
 }
 
@@ -37,9 +38,9 @@ SocketIF::SocketIF(int socketPort) {
 
 SocketIF::SocketIF(int socketPort, char *ip) {
 	this->addr_len_input = sizeof(this->si_other);
-        printf("Creating socket with port %d\n", socketPort);
+        cout << "Creating socket with port " << socketPort << endl;
 	openSocket(socketPort);
-        printf("Checking hostname %s\n", ip);
+        cout << "Checking hostname " << ip << endl;
 	if (ip != NULL) {
 	    sendVoidMessage(ip, 17893);
 	}
@@ -65,7 +66,7 @@ sockaddr_in SocketIF::getSiOther(){
 
 void SocketIF::openSocket(int port) {
     char portno_input[6];
-    printf("Creating socket\n");
+    cout << "Creating socket" << endl;
     snprintf(portno_input, 6, "%d", port);
     struct addrinfo hints_input;
     bzero(&hints_input, sizeof(hints_input));
@@ -77,7 +78,7 @@ void SocketIF::openSocket(int port) {
     struct addrinfo *servinfo_input;
     if ((rv_input = getaddrinfo(NULL, portno_input, &hints_input,
             &servinfo_input)) != 0) {
-        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv_input));
+        cerr << "getaddrinfo: " << gai_strerror(rv_input) << endl;
         exit(1);
     }
 
@@ -89,7 +90,7 @@ void SocketIF::openSocket(int port) {
                                          p_input->ai_socktype,
                                          p_input->ai_protocol))
                 == -1) {
-            printf("SocketIF: socket");
+            cout << "SocketIF: socket" << endl;
             perror("SocketIF: socket");
             continue;
         }
@@ -97,7 +98,7 @@ void SocketIF::openSocket(int port) {
         if (bind(this->sockfd_input, p_input->ai_addr,
                  p_input->ai_addrlen) == -1) {
             close(this->sockfd_input);
-            printf("SocketIF: bind");
+            cout << "SocketIF: bind" << endl;
             perror("SocketIF: bind");
             continue;
         }
@@ -106,8 +107,8 @@ void SocketIF::openSocket(int port) {
     }
 
     if (p_input == NULL) {
-        fprintf(stderr, "SocketIF: failed to bind socket\n");
-        printf("SocketIF: failed to bind socket\n");
+        cerr << "SocketIF: failed to bind socket" << endl;
+        cout << "SocketIF: failed to bind socket" << endl;
         exit(-1);
     }
 
@@ -123,7 +124,7 @@ void SocketIF::sendVoidMessage(char *hostname, int port) {
     hints.ai_flags = 0;
     struct addrinfo* addr_info = 0;
     if (getaddrinfo(hostname, NULL, &hints, &addr_info) != 0) {
-        fprintf(stderr, "Could not resolve hostname, exiting\n");
+        cerr << "Could not resolve hostname, exiting" << endl;
         exit(-1);
     }
     ((struct sockaddr_in *) addr_info->ai_addr)->sin_port = htons(port);
@@ -131,10 +132,10 @@ void SocketIF::sendVoidMessage(char *hostname, int port) {
     char data [1];
     if (sendto(this->sockfd_input, data, 1, 0,
         addr_info->ai_addr, addr_info->ai_addrlen) == -1) {
-        fprintf(stderr, "Could not send packet \n");
+        cerr << "Could not send packet" << endl;
         exit(-1);
     }
-    printf("IP check OK\n");
+    cout << "IP check OK" << endl;
 }
 
 

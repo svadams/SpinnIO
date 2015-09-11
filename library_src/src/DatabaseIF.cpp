@@ -90,6 +90,7 @@ void DatabaseIF::readDatabase(char* pop, bool keyToID, std::map<int, int>* keyMa
             int neuron_id = sqlite3_column_int(compiled_statment, 0);
             int key = sqlite3_column_int(compiled_statment, 1);
             if (keyToID == true){
+
                (*keyMap)[key] = neuron_id;
             } else {
                (*keyMap)[neuron_id] = key;

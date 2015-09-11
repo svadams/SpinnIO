@@ -28,14 +28,14 @@ public:
 	EIEIOReceiver(int, char*, std::map<int,int>*);
 	virtual ~EIEIOReceiver();
         int getRecvQueueSize();
-        list<pair<int, int> >* getRecvQueue();
+        list<pair<int, int> > getNextSpikePacket();
         SocketIF* getSocketPtr();
         std::map<int,int>* getKeyIDMap();
         std::map<int,int>* getIDKeyMap();
         void closeRecvSocket();
 protected:
 	void InternalThreadEntry();
-        void convertEIEIOMessage(eieio_message*);
+        void convertEIEIOMessage(eieio_message*, list<pair<int, int> > &);
 private:
 	pthread_mutex_t recvr_mutex;
 	pthread_cond_t cond;
@@ -43,7 +43,7 @@ private:
         std::map<int, int> *keyIDMap;
         std::map<int, int> *idKeyMap;
         SocketIF *recvSocket;
-        list<pair<int, int> > recvQueue;
+        std::deque<list<pair<int, int> > > recvQueue;
         int sockfd_input;
 	struct sockaddr_in si_other;
 	socklen_t addr_len_input;

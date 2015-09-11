@@ -19,8 +19,7 @@ namespace spinnio
 // and toolchain handshake is done to get back key-id mappings
 EIEIOReceiver::EIEIOReceiver(int spinnPort, char* ip, bool dbConn, char* dbPath) {
 
-
-	cout << "Creating EIEIO receiver from spiNNaker with port " << spinnPort << " and IP " << ip << endl;
+        cout << "Creating EIEIO receiver from spiNNaker with port " << spinnPort << " and ip " << ip << endl;
 
 	if (pthread_mutex_init(&this->recvr_mutex, NULL) == -1) {
 	        cerr << "Error initializing recvr mutex!" << endl;
@@ -58,7 +57,7 @@ EIEIOReceiver::EIEIOReceiver(int spinnPort, char* ip, bool dbConn, char* dbPath)
 
 EIEIOReceiver::EIEIOReceiver(int spinnPort, char* ip, std::map<int, int>* keymap) {
 
-	cout << "Creating EIEIO receiver from spiNNaker with port " << spinnPort << " and IP " << ip << endl;
+	cout << "Creating EIEIO receiver from spiNNaker with port " << spinnPort << " and ip " << ip << endl;
 
 	if (pthread_mutex_init(&this->recvr_mutex, NULL) == -1) {
 	        cerr << "Error initializing recvr mutex!" << endl;
@@ -88,7 +87,7 @@ void EIEIOReceiver::InternalThreadEntry(){
        // DEBUG check the key map :)
             
        //for (std::map<int, int>:: iterator i = this->keyIDMap->begin(); i != this->keyIDMap->end(); ++i){
-       //   printf("key %d id %d\n", i->first, i->second);
+          //printf("key %d id %d\n", i->first, i->second);
        //}
             
             
@@ -111,7 +110,7 @@ void EIEIOReceiver::InternalThreadEntry(){
                 // packet is OK
                 //numPckts++;
                 //printf("got a packet, total so far is %d\n", numPckts);
-		//list<pair<int, int> > data;
+		list<pair<int, int> > data;
                 // Decode eieio message
 		struct eieio_message* new_message = new eieio_message();
 		new_message->header.count = buffer_input[0];
@@ -125,10 +124,21 @@ void EIEIOReceiver::InternalThreadEntry(){
 		memcpy(new_message->data, &buffer_input[2], numbytes_input - 2);
 
                // convert message to a list of (time, nrn id) pairs
-               // and put onto receive List
-               this->convertEIEIOMessage(new_message);
+               this->convertEIEIOMessage(new_message, data);
                // clean up message data
 	       free(new_message->data);
+               pthread_mutex_lock(&this->recvr_mutex);
+               // Put (time, nrn id) list of pairs onto queue
+               /* 
+               for(list<pair<int, int> >::iterator iter = data.begin();iter != data.end(); ++iter) {
+                  this->recvQueue.push_back(*iter);
+                  // erase (time, nrn id) pair from list
+                  iter = data.erase(iter);
+               }
+               */
+               this->recvQueue.push_back(data);
+               pthread_cond_signal(&this->cond);
+               pthread_mutex_unlock(&this->recvr_mutex);
 
             }
 
@@ -138,18 +148,14 @@ void EIEIOReceiver::InternalThreadEntry(){
 }
 
 
-void EIEIOReceiver::convertEIEIOMessage(eieio_message* message){
+void EIEIOReceiver::convertEIEIOMessage(eieio_message* message, list<pair<int, int> > &points){
 
 
 	//check that its a data message
 	if (message->header.f != 0 or message->header.p != 0 or message->header.d != 1 
                                    or message->header.t != 1 or message->header.type != 2){
-           cout << "this packet was determined to be a "
+           cout <<"this packet was determined to be a "
                   "command packet. therefore not processing it." << endl;
-           //printf("eieio message: p=%i f=%i d=%i t=%i type=%i tag=%i count=%i\n",
-           //       message->header.p, message->header.f, message->header.d,
-           //       message->header.t, message->header.type, message->header.tag,
-           //       message->header.count);
         } else {
            uint time = (message->data[3] << 24) |
                        (message->data[2] << 16) |
@@ -169,11 +175,7 @@ void EIEIOReceiver::convertEIEIOMessage(eieio_message* message){
               }
               //fprintf(stderr, "time = %i, key = %i, neuron_id = %i\n", time, key, neuron_id);
               pair<int, int> point(time, neuron_id);
-              pthread_mutex_lock(&this->recvr_mutex);
-              // Push spike event onto master queue
-              this->recvQueue.push_back(point);
-              pthread_cond_signal(&this->cond);
-              pthread_mutex_unlock(&this->recvr_mutex);
+              points.push_back(point);
            } // for
         } // if data message
 }
@@ -189,12 +191,15 @@ int EIEIOReceiver::getRecvQueueSize(){
 
 }
 
-list<pair<int,int> >* EIEIOReceiver::getRecvQueue(){
 
-   return &(this->recvQueue);
-
+list<pair<int, int> > EIEIOReceiver::getNextSpikePacket(){
+	list<pair<int, int> > spikePacket;
+	pthread_mutex_lock(&this->recvr_mutex);
+	spikePacket = this->recvQueue.front();
+	this->recvQueue.pop_front();
+	pthread_mutex_unlock(&this->recvr_mutex);
+	return spikePacket;
 }
-
 
 SocketIF* EIEIOReceiver::getSocketPtr(){
 

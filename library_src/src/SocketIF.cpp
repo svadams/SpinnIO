@@ -76,9 +76,9 @@ void SocketIF::openSocket(int port) {
     hints_input.ai_socktype = SOCK_DGRAM; // type UDP (socket datagram)
     hints_input.ai_flags = AI_PASSIVE; // use my IP
 
-    struct timeval tv;
-    tv.tv_sec = 10;  /* 10 Secs Timeout */
-    tv.tv_usec = 0;  // Not init'ing this can cause strange errors
+    //struct timeval tv;
+    //tv.tv_sec = 10;  /* 10 Secs Timeout */
+    //tv.tv_usec = 0;  // Not init'ing this can cause strange errors
 
     int rv_input;
     struct addrinfo *servinfo_input;
@@ -101,7 +101,7 @@ void SocketIF::openSocket(int port) {
             continue;
         }
 
-        setsockopt(this->sockfd_input, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(struct timeval));
+        //setsockopt(this->sockfd_input, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(struct timeval));
 
         if (bind(this->sockfd_input, p_input->ai_addr,
                  p_input->ai_addrlen) == -1) {

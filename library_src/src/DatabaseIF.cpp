@@ -79,8 +79,8 @@ void DatabaseIF::openDatabase(char* dbPath){
 
 void DatabaseIF::readDatabase(char* pop, bool keyToID, std::map<int, int>* keyMap) {
         char *sql = sqlite3_mprintf(
-        "SELECT n.neuron_id as n_id, n.key as key"
-        " FROM key_to_neuron_mapping as n"
+        "SELECT n.atom_id as n_id, n.event_id as key"
+        " FROM event_to_atom_mapping as n"
         " JOIN Partitionable_vertices as p ON n.vertex_id = p.vertex_id"
         " WHERE p.vertex_label=\"%q\"", pop);
     sqlite3_stmt *compiled_statment;
